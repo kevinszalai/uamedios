@@ -300,9 +300,10 @@
   .overlay {
     position: fixed; inset: 0; background: rgba(0,36,71,0.45);
     display: none; align-items: center; justify-content: center; z-index: 50;
+    padding: 24px 12px; overflow-y: auto;
   }
   .overlay.show { display: flex; }
-  .modal { background: #fff; border-radius: 12px; padding: 24px; width: 360px; }
+  .modal { background: #fff; border-radius: 12px; padding: 24px; width: 360px; max-height: 88vh; overflow-y: auto; }
   .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .modal-title { font-size: 15px; font-weight: 700; }
   .field-label { font-size: 12px; color: #5F5E5A; font-weight: 600; display: block; margin-bottom: 4px; }
