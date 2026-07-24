@@ -319,6 +319,13 @@
 
   #confirm-modal .modal { width: 300px; }
   #confirm-text { font-size: 14px; margin-bottom: 16px; }
+
+  .formato-chip {
+    background: #F1EFE8; color: #5F5E5A; border: 1px solid #D3D1C7; border-radius: 20px;
+    padding: 5px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .formato-chip.selected { background: #00528F; color: #fff; border-color: #00528F; }
+  .formato-chip.disabled-chip { opacity: 0.4; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -476,20 +483,21 @@
     </div>
     <div class="field-row">
       <div class="unidad-wrap" style="width:auto;flex:1;">
-        <label class="field-label">Formato</label>
-        <select class="field" id="input-formato">
-          <option value="">Sin especificar</option>
-          <option>JPG</option>
-          <option>PNG</option>
-          <option>GIF</option>
-          <option>PDF</option>
-          <option>MP4</option>
-          <option>HTML5</option>
-          <option>AI</option>
-          <option>PSD</option>
-          <option>Otro</option>
-        </select>
+        <label class="field-label">Formato (hasta 4)</label>
+        <div id="formato-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
+          <button type="button" class="formato-chip" data-valor="JPG">JPG</button>
+          <button type="button" class="formato-chip" data-valor="PNG">PNG</button>
+          <button type="button" class="formato-chip" data-valor="GIF">GIF</button>
+          <button type="button" class="formato-chip" data-valor="PDF">PDF</button>
+          <button type="button" class="formato-chip" data-valor="MP4">MP4</button>
+          <button type="button" class="formato-chip" data-valor="HTML5">HTML5</button>
+          <button type="button" class="formato-chip" data-valor="AI">AI</button>
+          <button type="button" class="formato-chip" data-valor="PSD">PSD</button>
+          <button type="button" class="formato-chip" data-valor="Otro">Otro</button>
+        </div>
       </div>
+    </div>
+    <div class="field-row">
       <div>
         <label class="field-label">Peso máximo</label>
         <input class="field" type="number" id="input-peso" min="0" placeholder="Ej: 150" />
@@ -626,6 +634,12 @@ function decodeShareHash() {
 
 const sharedData = decodeShareHash();
 
+function migrarPieza(p) {
+  if (!p.formatos) {
+    p.formatos = p.formato ? [p.formato] : [];
+  }
+}
+
 function migrarMedios(medios) {
   medios.forEach(m => {
     if (!m.ediciones) m.ediciones = [];
@@ -633,6 +647,8 @@ function migrarMedios(medios) {
     if (!m.contactos) m.contactos = [];
     if (m.pautaDesde === undefined) m.pautaDesde = null;
     if (m.pautaHasta === undefined) m.pautaHasta = null;
+    m.piezas.forEach(migrarPieza);
+    m.ediciones.forEach(ed => ed.piezas.forEach(migrarPieza));
   });
 }
 
@@ -790,7 +806,7 @@ function renderPiezasList(container, piezas, color, edicionId) {
       const card = document.createElement('div');
       card.className = 'pieza-card';
       const detalles = [];
-      if (p.formato) detalles.push(p.formato);
+      if (p.formatos && p.formatos.length) detalles.push(p.formatos.join(' / '));
       if (p.peso) detalles.push(`máx. ${p.peso} ${p.pesoUnidad || 'KB'}`);
       const medidaTexto = `${p.ancho}x${p.alto} ${p.unidad}${detalles.length ? ' - ' + detalles.join(' - ') : ''}`;
       const tieneMasInfo = p.notas || p.actualizadoEn;
@@ -802,7 +818,7 @@ function renderPiezasList(container, piezas, color, edicionId) {
             <span class="pieza-tipo-badge">${escapeHtml(p.tipo)}</span>
             <span class="pieza-medidas" data-medida="${medidaTexto}" title="Click para copiar">${p.ancho} x ${p.alto} ${p.unidad}</span>
             ${p.ubicacion ? `<span class="pieza-ubicacion">${escapeHtml(p.ubicacion)}</span>` : ''}
-            ${p.formato ? `<span class="pieza-formato">${escapeHtml(p.formato)}</span>` : ''}
+            ${p.formatos && p.formatos.length ? `<span class="pieza-formato">${escapeHtml(p.formatos.join(' / '))}</span>` : ''}
             ${p.peso ? `<span class="pieza-peso">máx. ${p.peso} ${p.pesoUnidad || 'KB'}</span>` : ''}
           </div>
           ${tieneMasInfo ? `
@@ -1286,6 +1302,33 @@ function piezasArrayFor(m, edicionId) {
   return ed ? ed.piezas : null;
 }
 
+let formatoSeleccionados = [];
+const MAX_FORMATOS = 4;
+
+function sincronizarChipsFormato() {
+  document.querySelectorAll('.formato-chip').forEach(chip => {
+    const valor = chip.dataset.valor;
+    const seleccionado = formatoSeleccionados.includes(valor);
+    chip.classList.toggle('selected', seleccionado);
+    chip.classList.toggle('disabled-chip', !seleccionado && formatoSeleccionados.length >= MAX_FORMATOS);
+  });
+}
+
+document.querySelectorAll('.formato-chip').forEach(chip => {
+  chip.onclick = () => {
+    const valor = chip.dataset.valor;
+    const idx = formatoSeleccionados.indexOf(valor);
+    if (idx >= 0) {
+      formatoSeleccionados.splice(idx, 1);
+    } else if (formatoSeleccionados.length < MAX_FORMATOS) {
+      formatoSeleccionados.push(valor);
+    } else {
+      return;
+    }
+    sincronizarChipsFormato();
+  };
+});
+
 function openPiezaModal(id, edicionId) {
   const m = activeMedio();
   if (!m) return;
@@ -1293,7 +1336,7 @@ function openPiezaModal(id, edicionId) {
   editingEdicionId = edicionId || null;
   const piezas = piezasArrayFor(m, editingEdicionId);
   if (!piezas) return;
-  const pieza = id ? piezas.find(p => p.id === id) : { tipo: 'Flyer', nombre: '', ubicacion: '', ancho: '', alto: '', unidad: 'px', notas: '', formato: '', peso: '', pesoUnidad: 'KB' };
+  const pieza = id ? piezas.find(p => p.id === id) : { tipo: 'Flyer', nombre: '', ubicacion: '', ancho: '', alto: '', unidad: 'px', notas: '', formatos: [], peso: '', pesoUnidad: 'KB' };
   document.getElementById('modal-pieza-title').textContent = (id ? 'Editar pieza' : 'Nueva pieza') + (editingEdicionId ? ' · edición especial' : '');
   document.getElementById('input-tipo').value = pieza.tipo;
   document.getElementById('input-nombre').value = pieza.nombre;
@@ -1301,7 +1344,8 @@ function openPiezaModal(id, edicionId) {
   document.getElementById('input-ancho').value = pieza.ancho;
   document.getElementById('input-alto').value = pieza.alto;
   document.getElementById('input-unidad').value = pieza.unidad;
-  document.getElementById('input-formato').value = pieza.formato || '';
+  formatoSeleccionados = (pieza.formatos || []).slice(0, 4);
+  sincronizarChipsFormato();
   document.getElementById('input-peso').value = pieza.peso || '';
   document.getElementById('input-peso-unidad').value = pieza.pesoUnidad || 'KB';
   document.getElementById('input-notas').value = pieza.notas || '';
@@ -1327,7 +1371,7 @@ document.getElementById('btn-guardar-pieza').onclick = () => {
     ancho: Number(document.getElementById('input-ancho').value) || 0,
     alto: Number(document.getElementById('input-alto').value) || 0,
     unidad: document.getElementById('input-unidad').value,
-    formato: document.getElementById('input-formato').value,
+    formatos: formatoSeleccionados.slice(0, MAX_FORMATOS),
     peso: document.getElementById('input-peso').value ? Number(document.getElementById('input-peso').value) : '',
     pesoUnidad: document.getElementById('input-peso-unidad').value,
     notas: document.getElementById('input-notas').value.trim(),
@@ -1430,7 +1474,7 @@ function buscar(query) {
     }
     m.piezas.forEach(p => {
       const medidas = `${p.ancho}x${p.alto} ${p.unidad}`;
-      const extra = `${p.formato || ''} ${p.peso ? p.peso + ' ' + (p.pesoUnidad || 'KB') : ''} ${p.ubicacion || ''}`;
+      const extra = `${(p.formatos || []).join(' ')} ${p.peso ? p.peso + ' ' + (p.pesoUnidad || 'KB') : ''} ${p.ubicacion || ''}`;
       if (p.nombre.toLowerCase().includes(q) || medidas.toLowerCase().includes(q) || extra.toLowerCase().includes(q) || (p.notas || '').toLowerCase().includes(q)) {
         resultados.push({ tipo: 'pieza', medioId: m.id, edicionId: null, piezaId: p.id, titulo: p.nombre || '(sin nombre)', sub: `${m.nombre} · ${medidas} · pieza fija` });
       }
@@ -1441,7 +1485,7 @@ function buscar(query) {
       }
       ed.piezas.forEach(p => {
         const medidas = `${p.ancho}x${p.alto} ${p.unidad}`;
-        const extra = `${p.formato || ''} ${p.peso ? p.peso + ' ' + (p.pesoUnidad || 'KB') : ''} ${p.ubicacion || ''}`;
+        const extra = `${(p.formatos || []).join(' ')} ${p.peso ? p.peso + ' ' + (p.pesoUnidad || 'KB') : ''} ${p.ubicacion || ''}`;
         if (p.nombre.toLowerCase().includes(q) || medidas.toLowerCase().includes(q) || extra.toLowerCase().includes(q) || (p.notas || '').toLowerCase().includes(q)) {
           resultados.push({ tipo: 'pieza', medioId: m.id, edicionId: ed.id, piezaId: p.id, titulo: p.nombre || '(sin nombre)', sub: `${m.nombre} · ${medidas} · ${ed.nombre}` });
         }
