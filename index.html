@@ -236,19 +236,41 @@
   .pieza-actualizado { font-size: 11px; color: #B4B2A9; margin-top: 3px; }
   .pieza-actions { display: flex; gap: 4px; }
 
+  .pieza-linea2 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 3px; }
+  .pieza-tipo-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.4px; color: #0C447C;
+    background: #E6F1FB; padding: 2px 8px; border-radius: 20px; text-transform: uppercase;
+  }
+  .pieza-ubicacion { font-size: 12.5px; color: #5F5E5A; }
+  .pieza-ubicacion::before { content: '📍'; margin-right: 3px; font-size: 10px; }
+  .pieza-formato {
+    font-size: 11px; font-weight: 600; color: #5F5E5A; background: #F1EFE8;
+    padding: 2px 7px; border-radius: 5px; font-family: 'IBM Plex Mono', monospace;
+  }
+  .pieza-peso { font-size: 12px; color: #888780; font-family: 'IBM Plex Mono', monospace; }
+  .pieza-toggle-mas {
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    font-size: 11.5px; color: #00528F; font-weight: 600; padding: 4px 0 0; display: flex; align-items: center; gap: 3px;
+  }
+  .pieza-toggle-mas .chevron { transition: transform 0.15s ease; font-size: 9px; }
+  .pieza-toggle-mas.open .chevron { transform: rotate(180deg); }
+  .pieza-mas-info { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid #F1EFE8; }
+  .pieza-mas-info.open { display: block; }
+  .pieza-mas-info-row { font-size: 12.5px; color: #5F5E5A; margin-bottom: 3px; }
+  .pieza-mas-info-row b { color: #002447; font-weight: 600; }
+
   /* Pauta (vigencia comercial) */
   .pauta-banner {
-    display: flex; align-items: center; justify-content: space-between; gap: 16px;
-    background: #fff; border: 1px solid #E2E6EA; border-left: 4px solid #00528F;
-    border-radius: 10px; padding: 14px 18px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px; font-size: 12px;
   }
-  .pauta-banner.vencida { border-left-color: #ff436e; }
-  .pauta-banner.por-vencer { border-left-color: #FAC775; }
-  .pauta-label { font-size: 10.5px; font-weight: 700; letter-spacing: 1px; color: #888780; margin-bottom: 3px; }
-  .pauta-fechas { font-size: 21px; font-weight: 700; color: #002447; font-family: 'IBM Plex Mono', monospace; }
-  .pauta-fechas.sin-fecha { font-size: 14px; font-weight: 400; color: #B4B2A9; font-family: 'Poppins', sans-serif; }
+  .pauta-banner.vencida .pauta-fechas { color: #ff436e; }
+  .pauta-banner.por-vencer .pauta-fechas { color: #854F0B; }
+  .pauta-label { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: #B4B2A9; }
+  .pauta-fechas { font-size: 12.5px; font-weight: 600; color: #5F5E5A; font-family: 'IBM Plex Mono', monospace; }
+  .pauta-fechas.sin-fecha { font-weight: 400; color: #B4B2A9; font-family: 'Poppins', sans-serif; }
   .pauta-estado {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.3px; padding: 2px 8px; border-radius: 20px;
     color: #085041; background: #E1F5EE; white-space: nowrap;
   }
   .pauta-estado.vencida { color: #791F1F; background: #FCEBEB; }
@@ -372,14 +394,10 @@
       </div>
 
       <div class="pauta-banner" id="pauta-banner">
-        <div>
-          <div class="pauta-label">PAUTA</div>
-          <div class="pauta-fechas" id="pauta-fechas-texto"></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="pauta-estado" id="pauta-estado" style="display:none;"></span>
-          <button class="icon-btn no-print no-edit" id="btn-editar-pauta" title="Editar fechas de pauta">✎</button>
-        </div>
+        <span class="pauta-label">PAUTA:</span>
+        <span class="pauta-fechas" id="pauta-fechas-texto"></span>
+        <span class="pauta-estado" id="pauta-estado" style="display:none;"></span>
+        <button class="icon-btn no-print no-edit" id="btn-editar-pauta" title="Editar fechas de pauta" style="padding:2px;">✎</button>
       </div>
 
       <div class="tabs-bar no-print">
@@ -430,10 +448,13 @@
     <select class="field" id="input-tipo">
       <option>Flyer</option>
       <option>Salida</option>
+      <option>Banner</option>
       <option>Otro</option>
     </select>
     <label class="field-label">Nombre</label>
     <input class="field" id="input-nombre" placeholder="Ej: Flyer Home, Doble página revista" />
+    <label class="field-label">Ubicación</label>
+    <input class="field" id="input-ubicacion" placeholder="Ej: Home, Portada, Contratapa, Sidebar" />
     <div class="field-row">
       <div>
         <label class="field-label">Ancho</label>
@@ -450,6 +471,34 @@
           <option>cm</option>
           <option>mm</option>
           <option>columnas</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="unidad-wrap" style="width:auto;flex:1;">
+        <label class="field-label">Formato</label>
+        <select class="field" id="input-formato">
+          <option value="">Sin especificar</option>
+          <option>JPG</option>
+          <option>PNG</option>
+          <option>GIF</option>
+          <option>PDF</option>
+          <option>MP4</option>
+          <option>HTML5</option>
+          <option>AI</option>
+          <option>PSD</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Peso máximo</label>
+        <input class="field" type="number" id="input-peso" min="0" placeholder="Ej: 150" />
+      </div>
+      <div class="unidad-wrap">
+        <label class="field-label">Unidad</label>
+        <select class="field" id="input-peso-unidad">
+          <option>KB</option>
+          <option>MB</option>
         </select>
       </div>
     </div>
@@ -546,7 +595,7 @@
 <script>
 const STORAGE_KEY = 'ua-medios-data';
 const PALETTE = ['#00528F', '#008091', '#00C4DF', '#ff436e', '#002447'];
-const TIPOS = ['Flyer', 'Salida', 'Otro'];
+const TIPOS = ['Flyer', 'Salida', 'Banner', 'Otro'];
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
@@ -740,14 +789,28 @@ function renderPiezasList(container, piezas, color, edicionId) {
       const size = previewSize(p.ancho, p.alto);
       const card = document.createElement('div');
       card.className = 'pieza-card';
-      const medidaTexto = `${p.ancho}x${p.alto} ${p.unidad}`;
+      const detalles = [];
+      if (p.formato) detalles.push(p.formato);
+      if (p.peso) detalles.push(`máx. ${p.peso} ${p.pesoUnidad || 'KB'}`);
+      const medidaTexto = `${p.ancho}x${p.alto} ${p.unidad}${detalles.length ? ' - ' + detalles.join(' - ') : ''}`;
+      const tieneMasInfo = p.notas || p.actualizadoEn;
       card.innerHTML = `
         <div class="preview-wrap"><div class="preview-box" style="width:${size.w}px;height:${size.h}px;background:${color}22;border:1.5px solid ${color};"></div></div>
         <div class="pieza-info">
           <div class="pieza-nombre">${escapeHtml(p.nombre) || '(sin nombre)'}</div>
-          <div class="pieza-medidas" data-medida="${medidaTexto}" title="Click para copiar">${p.ancho} x ${p.alto} ${p.unidad}</div>
-          ${p.notas ? `<div class="pieza-notas">${escapeHtml(p.notas)}</div>` : ''}
-          ${p.actualizadoEn ? `<div class="pieza-actualizado">${tiempoRelativo(p.actualizadoEn)}</div>` : ''}
+          <div class="pieza-linea2">
+            <span class="pieza-tipo-badge">${escapeHtml(p.tipo)}</span>
+            <span class="pieza-medidas" data-medida="${medidaTexto}" title="Click para copiar">${p.ancho} x ${p.alto} ${p.unidad}</span>
+            ${p.ubicacion ? `<span class="pieza-ubicacion">${escapeHtml(p.ubicacion)}</span>` : ''}
+            ${p.formato ? `<span class="pieza-formato">${escapeHtml(p.formato)}</span>` : ''}
+            ${p.peso ? `<span class="pieza-peso">máx. ${p.peso} ${p.pesoUnidad || 'KB'}</span>` : ''}
+          </div>
+          ${tieneMasInfo ? `
+          <button class="pieza-toggle-mas" data-id="${p.id}">Más info <span class="chevron">▾</span></button>
+          <div class="pieza-mas-info" id="mas-info-${p.id}">
+            ${p.notas ? `<div class="pieza-mas-info-row"><b>Notas:</b> ${escapeHtml(p.notas)}</div>` : ''}
+            ${p.actualizadoEn ? `<div class="pieza-mas-info-row" style="color:#B4B2A9;">${tiempoRelativo(p.actualizadoEn)}</div>` : ''}
+          </div>` : ''}
         </div>
         <div class="pieza-actions no-print no-edit">
           <button class="icon-btn btn-edit-pieza" data-id="${p.id}" data-edicion="${edicionId || ''}">✎</button>
@@ -767,6 +830,14 @@ function renderPiezasList(container, piezas, color, edicionId) {
   });
   container.querySelectorAll('.pieza-medidas').forEach(el => {
     el.onclick = () => copiarMedida(el);
+  });
+  container.querySelectorAll('.pieza-toggle-mas').forEach(btn => {
+    btn.onclick = () => {
+      const panel = document.getElementById(`mas-info-${btn.dataset.id}`);
+      const abierto = panel.classList.toggle('open');
+      btn.classList.toggle('open', abierto);
+      btn.innerHTML = abierto ? 'Menos info <span class="chevron">▾</span>' : 'Más info <span class="chevron">▾</span>';
+    };
   });
 }
 
@@ -1222,13 +1293,17 @@ function openPiezaModal(id, edicionId) {
   editingEdicionId = edicionId || null;
   const piezas = piezasArrayFor(m, editingEdicionId);
   if (!piezas) return;
-  const pieza = id ? piezas.find(p => p.id === id) : { tipo: 'Flyer', nombre: '', ancho: '', alto: '', unidad: 'px', notas: '' };
+  const pieza = id ? piezas.find(p => p.id === id) : { tipo: 'Flyer', nombre: '', ubicacion: '', ancho: '', alto: '', unidad: 'px', notas: '', formato: '', peso: '', pesoUnidad: 'KB' };
   document.getElementById('modal-pieza-title').textContent = (id ? 'Editar pieza' : 'Nueva pieza') + (editingEdicionId ? ' · edición especial' : '');
   document.getElementById('input-tipo').value = pieza.tipo;
   document.getElementById('input-nombre').value = pieza.nombre;
+  document.getElementById('input-ubicacion').value = pieza.ubicacion || '';
   document.getElementById('input-ancho').value = pieza.ancho;
   document.getElementById('input-alto').value = pieza.alto;
   document.getElementById('input-unidad').value = pieza.unidad;
+  document.getElementById('input-formato').value = pieza.formato || '';
+  document.getElementById('input-peso').value = pieza.peso || '';
+  document.getElementById('input-peso-unidad').value = pieza.pesoUnidad || 'KB';
   document.getElementById('input-notas').value = pieza.notas || '';
   document.getElementById('overlay-pieza').classList.add('show');
   document.getElementById('input-nombre').focus();
@@ -1248,9 +1323,13 @@ document.getElementById('btn-guardar-pieza').onclick = () => {
   const data = {
     tipo: document.getElementById('input-tipo').value,
     nombre,
+    ubicacion: document.getElementById('input-ubicacion').value.trim(),
     ancho: Number(document.getElementById('input-ancho').value) || 0,
     alto: Number(document.getElementById('input-alto').value) || 0,
     unidad: document.getElementById('input-unidad').value,
+    formato: document.getElementById('input-formato').value,
+    peso: document.getElementById('input-peso').value ? Number(document.getElementById('input-peso').value) : '',
+    pesoUnidad: document.getElementById('input-peso-unidad').value,
     notas: document.getElementById('input-notas').value.trim(),
     actualizadoEn: new Date().toISOString(),
   };
@@ -1351,7 +1430,8 @@ function buscar(query) {
     }
     m.piezas.forEach(p => {
       const medidas = `${p.ancho}x${p.alto} ${p.unidad}`;
-      if (p.nombre.toLowerCase().includes(q) || medidas.toLowerCase().includes(q) || (p.notas || '').toLowerCase().includes(q)) {
+      const extra = `${p.formato || ''} ${p.peso ? p.peso + ' ' + (p.pesoUnidad || 'KB') : ''} ${p.ubicacion || ''}`;
+      if (p.nombre.toLowerCase().includes(q) || medidas.toLowerCase().includes(q) || extra.toLowerCase().includes(q) || (p.notas || '').toLowerCase().includes(q)) {
         resultados.push({ tipo: 'pieza', medioId: m.id, edicionId: null, piezaId: p.id, titulo: p.nombre || '(sin nombre)', sub: `${m.nombre} · ${medidas} · pieza fija` });
       }
     });
@@ -1361,7 +1441,8 @@ function buscar(query) {
       }
       ed.piezas.forEach(p => {
         const medidas = `${p.ancho}x${p.alto} ${p.unidad}`;
-        if (p.nombre.toLowerCase().includes(q) || medidas.toLowerCase().includes(q) || (p.notas || '').toLowerCase().includes(q)) {
+        const extra = `${p.formato || ''} ${p.peso ? p.peso + ' ' + (p.pesoUnidad || 'KB') : ''} ${p.ubicacion || ''}`;
+        if (p.nombre.toLowerCase().includes(q) || medidas.toLowerCase().includes(q) || extra.toLowerCase().includes(q) || (p.notas || '').toLowerCase().includes(q)) {
           resultados.push({ tipo: 'pieza', medioId: m.id, edicionId: ed.id, piezaId: p.id, titulo: p.nombre || '(sin nombre)', sub: `${m.nombre} · ${medidas} · ${ed.nombre}` });
         }
       });
