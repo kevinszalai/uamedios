@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UA · Medios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #EEF1F4;
+    color: #002447;
+  }
+  #app {
+    display: flex;
+    max-width: 1100px;
+    margin: 30px auto;
+    min-height: 600px;
+    background: #F7F9FB;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #E2E6EA;
+    box-shadow: 0 2px 20px rgba(0,36,71,0.06);
+  }
+  /* Sidebar */
+  #sidebar {
+    width: 230px;
+    background: #002447;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  #sidebar .brand { padding: 22px 18px 12px; }
+  #sidebar .brand .eyebrow { font-size: 11px; letter-spacing: 1.5px; color: #7FA9C9; font-weight: 600; }
+  #sidebar .brand .title { font-size: 18px; font-weight: 700; margin-top: 4px; }
+  #stats-toggle {
+    width: 100%; background: none; border: none; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 18px 8px; color: #7FA9C9; font-size: 12px; font-weight: 600;
+  }
+  #stats-chevron { transition: transform 0.15s ease; font-size: 10px; }
+  #stats-chevron.open { transform: rotate(180deg); }
+  #stats-bar { display: none; gap: 10px; padding: 0 18px 14px; }
+  #stats-bar.open { display: flex; }
+  .stat-chip { flex: 1; background: rgba(255,255,255,0.06); border-radius: 8px; padding: 7px 8px; text-align: center; }
+  .stat-num { font-size: 15px; font-weight: 700; color: #00C4DF; line-height: 1.2; }
+  .stat-label { font-size: 9.5px; color: #7FA9C9; letter-spacing: 0.3px; margin-top: 1px; }
+  #medio-list { flex: 1; overflow-y: auto; padding: 4px 10px; }
+  .medio-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 10px; border-radius: 8px; cursor: pointer;
+    margin-bottom: 3px; font-size: 13.5px;
+  }
+  .medio-drag-handle { color: #4A6B87; font-size: 12px; cursor: grab; flex-shrink: 0; }
+  .medio-item.dragging { opacity: 0.4; }
+  .medio-item.drag-over { box-shadow: inset 0 2px 0 #00C4DF; }
+  .medio-item:hover { background: rgba(255,255,255,0.07); }
+  .medio-item.active { background: rgba(255,255,255,0.14); font-weight: 600; }
+  .medio-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .medio-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .medio-count { font-size: 11px; color: #7FA9C9; }
+  #new-medio-box { padding: 12px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .btn-primary-side {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: #008091; color: #fff; border: none; border-radius: 8px;
+    padding: 9px 0; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .side-input {
+    width: 100%; border-radius: 6px; border: 1px solid #33526B; padding: 7px 9px;
+    font-size: 13px; background: #0B3153; color: #fff; font-family: inherit; margin-bottom: 6px;
+  }
+  .side-input::placeholder { color: #7FA9C9; }
+  .side-row { display: flex; gap: 6px; }
+  .side-row button { flex: 1; border: none; border-radius: 6px; padding: 6px 0; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+  .btn-crear { background: #00C4DF; color: #002447; font-weight: 700; }
+  .btn-cancelar-side { background: transparent; color: #9FBBD1; border: 1px solid #33526B !important; }
+
+  /* Main */
+  #main { flex: 1; padding: 26px 32px; overflow-y: auto; }
+  #empty-state { color: #888780; font-size: 14px; margin-top: 60px; text-align: center; }
+  #medio-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; }
+  #medio-header h2 { font-size: 20px; font-weight: 700; margin: 0; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .dot-lg { width: 10px; height: 10px; border-radius: 50%; }
+  .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; color: #B4B2A9; display: flex; }
+  .icon-btn:hover { color: #5F5E5A; }
+  .btn-primary {
+    display: flex; align-items: center; gap: 6px; background: #00528F; color: #fff;
+    border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .grupo-label { font-size: 11.5px; font-weight: 700; letter-spacing: 1px; color: #5F5E5A; margin-bottom: 10px; }
+
+  .tabs-bar { display: flex; gap: 4px; margin-bottom: 22px; border-bottom: 1px solid #E2E6EA; }
+  .tab-btn {
+    background: none; border: none; cursor: pointer; font-family: inherit;
+    font-size: 13.5px; font-weight: 600; color: #888780; padding: 9px 4px;
+    margin-right: 20px; border-bottom: 2px solid transparent; position: relative; top: 1px;
+  }
+  .tab-btn.active { color: #00528F; border-bottom-color: #00528F; }
+  .tab-count { font-size: 11px; color: #B4B2A9; margin-left: 4px; font-weight: 600; }
+  .tab-btn.active .tab-count { color: #00528F; }
+
+  .edicion-block { background: #fff; border: 1px solid #E2E6EA; border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+  .edicion-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .edicion-title-wrap { display: flex; align-items: center; gap: 8px; }
+  .edicion-title { font-size: 14.5px; font-weight: 700; color: #002447; }
+  .edicion-badge {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.5px; color: #993556;
+    background: #FBEAF0; padding: 2px 8px; border-radius: 20px;
+  }
+  .btn-add-pieza-edicion {
+    display: flex; align-items: center; gap: 5px; background: #F1EFE8; color: #002447;
+    border: none; border-radius: 7px; padding: 6px 11px; font-size: 12.5px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  #btn-nueva-edicion {
+    display: flex; align-items: center; gap: 6px; background: #ff436e; color: #fff;
+    border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; margin-bottom: 18px;
+  }
+  #form-nueva-edicion { display: flex; gap: 8px; margin-bottom: 18px; }
+  #form-nueva-edicion input {
+    flex: 1; border-radius: 7px; border: 1px solid #D3D1C7; padding: 8px 10px; font-size: 13.5px; font-family: inherit;
+  }
+  #form-nueva-edicion button { border: none; border-radius: 7px; padding: 0 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .empty-ediciones { color: #B4B2A9; font-size: 13.5px; padding: 20px 0; text-align: center; }
+
+  .edicion-badge.vencida { color: #791F1F; background: #FCEBEB; }
+  .edicion-badge.por-vencer { color: #854F0B; background: #FAEEDA; }
+  .edicion-fecha { font-size: 11.5px; color: #888780; font-family: 'IBM Plex Mono', monospace; }
+  .edicion-block.vencida { opacity: 0.55; }
+  #ediciones-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  #ediciones-toolbar label { font-size: 12.5px; color: #5F5E5A; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .field-fecha-wrap { margin-bottom: 6px; }
+  .field-fecha-wrap input { width: 100%; border-radius: 7px; border: 1px solid #D3D1C7; padding: 8px 10px; font-size: 13px; font-family: inherit; }
+  .field-fecha-label { font-size: 11px; color: #9FBBD1; margin-bottom: 4px; display: block; }
+
+  @keyframes flash-highlight {
+    0% { background: #FAEEDA; }
+    100% { background: #fff; }
+  }
+  .highlight-flash { animation: flash-highlight 1.6s ease-out; }
+
+  /* Buscador global */
+  #search-box { padding: 0 12px 10px; position: relative; }
+  #search-input {
+    width: 100%; border-radius: 7px; border: 1px solid #33526B; padding: 8px 10px 8px 30px;
+    font-size: 13px; background: #0B3153; color: #fff; font-family: inherit;
+  }
+  #search-input::placeholder { color: #7FA9C9; }
+  #search-icon { position: absolute; left: 22px; top: 9px; color: #7FA9C9; font-size: 13px; pointer-events: none; }
+  #search-results {
+    position: absolute; left: 12px; right: 12px; top: 100%; background: #fff;
+    border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.18); max-height: 320px;
+    overflow-y: auto; z-index: 40; display: none;
+  }
+  #search-results.show { display: block; }
+  .search-result-item { padding: 9px 12px; cursor: pointer; border-bottom: 1px solid #F1EFE8; }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: #F7F9FB; }
+  .search-result-title { font-size: 13px; color: #002447; font-weight: 600; }
+  .search-result-sub { font-size: 11.5px; color: #888780; margin-top: 2px; }
+  .search-no-results { padding: 14px 12px; font-size: 12.5px; color: #B4B2A9; text-align: center; }
+
+  /* Backup */
+  #backup-box { padding: 0 12px 10px; display: flex; gap: 6px; }
+  .btn-backup {
+    flex: 1; background: transparent; color: #9FBBD1; border: 1px solid #33526B; border-radius: 6px;
+    padding: 7px 4px; font-size: 11.5px; cursor: pointer; font-family: inherit;
+  }
+  .btn-backup:hover { background: rgba(255,255,255,0.06); color: #fff; }
+
+  /* Impresión */
+  @media print {
+    body { background: #fff; }
+    #app { max-width: 100%; margin: 0; border: none; box-shadow: none; border-radius: 0; }
+    #sidebar, .no-print { display: none !important; }
+    #main { padding: 0; overflow: visible; }
+    #tab-fijas-content, #tab-ediciones-content, #tab-contacto-content { display: block !important; }
+    .print-only { display: block !important; }
+    .pieza-card, .edicion-block { break-inside: avoid; border-color: #ccc; }
+    .edicion-block.vencida { opacity: 1; }
+  }
+  .print-only { display: none; }
+  .print-header { margin-bottom: 6px; }
+  .print-header .print-eyebrow { font-size: 11px; letter-spacing: 1px; color: #5F5E5A; font-weight: 600; }
+  .print-header .print-title { font-size: 22px; font-weight: 700; color: #002447; margin: 2px 0 18px; }
+  .print-section-title { font-size: 15px; font-weight: 700; color: #002447; margin: 24px 0 12px; border-top: 1px solid #E2E6EA; padding-top: 18px; }
+  .print-section-title:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+  .pieza-card {
+    display: flex; align-items: center; gap: 16px; background: #fff;
+    border: 1px solid #E2E6EA; border-radius: 10px; padding: 12px 16px; margin-bottom: 8px;
+  }
+  .preview-wrap { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .preview-box { border-radius: 3px; }
+  .pieza-info { flex: 1; min-width: 0; }
+  .pieza-nombre { font-size: 14px; font-weight: 600; color: #002447; }
+  .pieza-medidas { font-size: 12.5px; color: #5F5E5A; font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
+  .pieza-notas { font-size: 12px; color: #888780; margin-top: 3px; }
+  .medio-item.archivado { opacity: 0.45; }
+  .medio-archive-badge { font-size: 9px; font-weight: 700; color: #7FA9C9; letter-spacing: 0.3px; }
+  #archivados-toggle { padding: 0 12px 10px; }
+  #archivados-toggle label { font-size: 11.5px; color: #7FA9C9; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .medio-badge-archivado {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.5px; color: #5F5E5A;
+    background: #F1EFE8; padding: 2px 8px; border-radius: 20px;
+  }
+
+  /* Compartir / solo lectura */
+  #btn-share-link { }
+  .share-modal-link-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .share-modal-link-row input {
+    flex: 1; border-radius: 7px; border: 1px solid #D3D1C7; padding: 8px 10px;
+    font-size: 12px; font-family: 'IBM Plex Mono', monospace; color: #5F5E5A;
+  }
+  .share-modal-note { font-size: 12px; color: #888780; line-height: 1.5; margin-bottom: 4px; }
+  #readonly-banner {
+    display: none; align-items: center; justify-content: space-between; gap: 12px;
+    background: #FAEEDA; border: 1px solid #F0DDB0; color: #63380B; border-radius: 10px;
+    padding: 10px 16px; font-size: 13px; margin-bottom: 20px;
+  }
+  #readonly-banner button {
+    background: #002447; color: #fff; border: none; border-radius: 6px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; flex-shrink: 0;
+  }
+  body.read-only .no-edit { display: none !important; }
+
+  /* Copiar medida / última actualización */
+  .pieza-medidas { cursor: pointer; }
+  .pieza-medidas:hover { text-decoration: underline; }
+  .pieza-actualizado { font-size: 11px; color: #B4B2A9; margin-top: 3px; }
+  .pieza-actions { display: flex; gap: 4px; }
+
+  /* Pauta (vigencia comercial) */
+  .pauta-banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    background: #fff; border: 1px solid #E2E6EA; border-left: 4px solid #00528F;
+    border-radius: 10px; padding: 14px 18px; margin-bottom: 20px;
+  }
+  .pauta-banner.vencida { border-left-color: #ff436e; }
+  .pauta-banner.por-vencer { border-left-color: #FAC775; }
+  .pauta-label { font-size: 10.5px; font-weight: 700; letter-spacing: 1px; color: #888780; margin-bottom: 3px; }
+  .pauta-fechas { font-size: 21px; font-weight: 700; color: #002447; font-family: 'IBM Plex Mono', monospace; }
+  .pauta-fechas.sin-fecha { font-size: 14px; font-weight: 400; color: #B4B2A9; font-family: 'Poppins', sans-serif; }
+  .pauta-estado {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.5px; padding: 4px 10px; border-radius: 20px;
+    color: #085041; background: #E1F5EE; white-space: nowrap;
+  }
+  .pauta-estado.vencida { color: #791F1F; background: #FCEBEB; }
+  .pauta-estado.por-vencer { color: #854F0B; background: #FAEEDA; }
+
+  /* Contactos */
+  .contacto-card {
+    display: flex; align-items: flex-start; gap: 14px; background: #fff;
+    border: 1px solid #E2E6EA; border-radius: 10px; padding: 14px 16px; margin-bottom: 8px;
+  }
+  .contacto-avatar {
+    width: 38px; height: 38px; border-radius: 50%; background: #F1EFE8; color: #5F5E5A;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;
+  }
+  .contacto-info { flex: 1; min-width: 0; }
+  .contacto-nombre { font-size: 14px; font-weight: 600; color: #002447; }
+  .contacto-cargo { font-size: 12.5px; color: #888780; margin-top: 1px; }
+  .contacto-datos { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 8px; font-size: 12.5px; }
+  .contacto-datos a { color: #00528F; text-decoration: none; }
+  .contacto-datos a:hover { text-decoration: underline; }
+  .contacto-notas { font-size: 12px; color: #888780; margin-top: 6px; }
+  .btn-add-contacto {
+    display: flex; align-items: center; gap: 6px; background: #00528F; color: #fff;
+    border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit; margin-bottom: 18px;
+  }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,36,71,0.45);
+    display: none; align-items: center; justify-content: center; z-index: 50;
+  }
+  .overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 12px; padding: 24px; width: 360px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal-title { font-size: 15px; font-weight: 700; }
+  .field-label { font-size: 12px; color: #5F5E5A; font-weight: 600; display: block; margin-bottom: 4px; }
+  .field { width: 100%; padding: 8px 10px; border-radius: 7px; border: 1px solid #D3D1C7; margin-bottom: 12px; font-size: 13.5px; font-family: inherit; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row > div { flex: 1; }
+  .field-row .unidad-wrap { width: 90px; flex: none; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 4px; }
+  .modal-actions button { flex: 1; border: none; border-radius: 8px; padding: 9px 0; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn-cancel { background: #F1EFE8; color: #5F5E5A; }
+  .btn-save { background: #00528F; color: #fff; }
+  .btn-save:disabled { background: #B4B2A9; cursor: not-allowed; }
+  .btn-danger { background: #ff436e; color: #fff; }
+
+  #confirm-modal .modal { width: 300px; }
+  #confirm-text { font-size: 14px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="sidebar">
+    <div class="brand">
+      <div class="eyebrow">UNIVERSAL ASSISTANCE</div>
+      <div class="title">Medios ARG</div>
+    </div>
+    <button id="stats-toggle">
+      <span>Resumen</span>
+      <span id="stats-chevron">▾</span>
+    </button>
+    <div id="stats-bar">
+      <div class="stat-chip"><div class="stat-num" id="stat-medios">0</div><div class="stat-label">MEDIOS</div></div>
+      <div class="stat-chip"><div class="stat-num" id="stat-piezas">0</div><div class="stat-label">PIEZAS FIJAS</div></div>
+      <div class="stat-chip"><div class="stat-num" id="stat-ediciones">0</div><div class="stat-label">EDIC. ACTIVAS</div></div>
+    </div>
+    <div id="search-box">
+      <span id="search-icon">🔍</span>
+      <input id="search-input" placeholder="Buscar pieza, medida, medio..." autocomplete="off" />
+      <div id="search-results"></div>
+    </div>
+    <div id="medio-list"></div>
+    <div id="archivados-toggle">
+      <label><input type="checkbox" id="chk-mostrar-archivados" /> Mostrar archivados</label>
+    </div>
+    <div id="backup-box">
+      <button class="btn-backup no-edit" id="btn-export">⬇ Backup</button>
+      <button class="btn-backup no-edit" id="btn-import">⬆ Restaurar</button>
+      <input type="file" id="input-import-file" accept="application/json" style="display:none;" />
+    </div>
+    <div id="share-box" style="padding:0 12px 10px;">
+      <button class="btn-backup no-edit" id="btn-share-link" style="width:100%;">🔗 Link de solo lectura</button>
+    </div>
+    <div id="new-medio-box" class="no-edit">
+      <button class="btn-primary-side" id="btn-mostrar-nuevo-medio">+ Nuevo medio</button>
+      <div id="form-nuevo-medio" style="display:none;">
+        <input class="side-input" id="input-nuevo-medio" placeholder="Nombre del medio" />
+        <div class="side-row">
+          <button class="btn-crear" id="btn-crear-medio">Crear</button>
+          <button class="btn-cancelar-side" id="btn-cancelar-medio">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="readonly-banner" class="no-print">
+      <span id="readonly-banner-text"></span>
+      <button id="btn-salir-readonly">Volver a mis datos</button>
+    </div>
+    <div id="empty-state" style="display:none;">Creá un medio para empezar a cargar flyers y salidas.</div>
+    <div id="medio-view" style="display:none;">
+      <div id="medio-header">
+        <div class="header-left">
+          <span class="dot-lg" id="medio-dot"></span>
+          <h2 id="medio-nombre"></h2>
+          <span class="medio-badge-archivado" id="medio-badge-archivado" style="display:none;">ARCHIVADO</span>
+          <button class="icon-btn no-print no-edit" id="btn-archivar-medio" title="Archivar medio">📦</button>
+          <button class="icon-btn no-print no-edit" id="btn-eliminar-medio" title="Eliminar medio">🗑</button>
+        </div>
+        <div style="display:flex;gap:8px;" class="no-print">
+          <button class="btn-backup" id="btn-imprimir" style="border-color:#D3D1C7;color:#5F5E5A;padding:8px 12px;font-size:13px;">🖨 Imprimir / PDF</button>
+          <button class="btn-primary no-edit" id="btn-agregar-pieza">+ Agregar pieza</button>
+        </div>
+      </div>
+
+      <div class="print-only print-header">
+        <div class="print-eyebrow">UNIVERSAL ASSISTANCE</div>
+        <div class="print-title" id="print-medio-nombre"></div>
+      </div>
+
+      <div class="pauta-banner" id="pauta-banner">
+        <div>
+          <div class="pauta-label">PAUTA</div>
+          <div class="pauta-fechas" id="pauta-fechas-texto"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="pauta-estado" id="pauta-estado" style="display:none;"></span>
+          <button class="icon-btn no-print no-edit" id="btn-editar-pauta" title="Editar fechas de pauta">✎</button>
+        </div>
+      </div>
+
+      <div class="tabs-bar no-print">
+        <button class="tab-btn" id="tab-btn-fijas">Piezas fijas<span class="tab-count" id="count-fijas"></span></button>
+        <button class="tab-btn" id="tab-btn-ediciones">Ediciones especiales<span class="tab-count" id="count-ediciones"></span></button>
+        <button class="tab-btn" id="tab-btn-contacto">Contacto<span class="tab-count" id="count-contacto"></span></button>
+      </div>
+
+      <div id="tab-fijas-content">
+        <div class="print-section-title print-only">Piezas fijas</div>
+        <div id="piezas-container"></div>
+      </div>
+
+      <div id="tab-ediciones-content" style="display:none;">
+        <div class="print-section-title print-only">Ediciones especiales</div>
+        <div id="ediciones-toolbar" class="no-print">
+          <button id="btn-nueva-edicion" class="no-edit">+ Nueva edición</button>
+          <label><input type="checkbox" id="chk-mostrar-vencidas" /> Mostrar vencidas</label>
+        </div>
+        <div id="form-nueva-edicion" style="display:none;" class="no-print no-edit">
+          <input id="input-nueva-edicion" placeholder="Nombre de la edición (ej: Mundial 2026, Verano)" />
+          <div class="field-fecha-wrap" style="flex:none;">
+            <span class="field-fecha-label" style="color:#5F5E5A;">Vigente hasta (opcional)</span>
+            <input type="date" id="input-fecha-edicion" style="width:150px;" />
+          </div>
+          <button class="btn-crear" id="btn-crear-edicion" style="background:#00C4DF;color:#002447;">Crear</button>
+          <button class="btn-cancel" id="btn-cancelar-edicion">Cancelar</button>
+        </div>
+        <div id="ediciones-container"></div>
+      </div>
+
+      <div id="tab-contacto-content" style="display:none;">
+        <div class="print-section-title print-only">Contacto</div>
+        <button class="btn-add-contacto no-print no-edit" id="btn-agregar-contacto">+ Agregar contacto</button>
+        <div id="contactos-container"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-pieza">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-pieza-title">Nueva pieza</div>
+      <button class="icon-btn" id="btn-cerrar-modal">✕</button>
+    </div>
+    <label class="field-label">Tipo</label>
+    <select class="field" id="input-tipo">
+      <option>Flyer</option>
+      <option>Salida</option>
+      <option>Otro</option>
+    </select>
+    <label class="field-label">Nombre</label>
+    <input class="field" id="input-nombre" placeholder="Ej: Flyer Home, Doble página revista" />
+    <div class="field-row">
+      <div>
+        <label class="field-label">Ancho</label>
+        <input class="field" type="number" id="input-ancho" />
+      </div>
+      <div>
+        <label class="field-label">Alto</label>
+        <input class="field" type="number" id="input-alto" />
+      </div>
+      <div class="unidad-wrap">
+        <label class="field-label">Unidad</label>
+        <select class="field" id="input-unidad">
+          <option>px</option>
+          <option>cm</option>
+          <option>mm</option>
+          <option>columnas</option>
+        </select>
+      </div>
+    </div>
+    <label class="field-label">Notas (opcional)</label>
+    <textarea class="field" id="input-notas" rows="2"></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancelar-pieza">Cancelar</button>
+      <button class="btn-save" id="btn-guardar-pieza">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="confirm-modal">
+  <div class="modal">
+    <div id="confirm-text"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancelar-confirm">Cancelar</button>
+      <button class="btn-danger" id="btn-confirmar-eliminar">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-pauta">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Fechas de pauta</div>
+      <button class="icon-btn" id="btn-cerrar-pauta">✕</button>
+    </div>
+    <div class="field-row">
+      <div>
+        <label class="field-label">Desde</label>
+        <input class="field" type="date" id="input-pauta-desde" />
+      </div>
+      <div>
+        <label class="field-label">Hasta</label>
+        <input class="field" type="date" id="input-pauta-hasta" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancelar-pauta">Cancelar</button>
+      <button class="btn-save" id="btn-guardar-pauta">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay-contacto">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-contacto-title">Nuevo contacto</div>
+      <button class="icon-btn" id="btn-cerrar-contacto">✕</button>
+    </div>
+    <label class="field-label">Nombre</label>
+    <input class="field" id="input-contacto-nombre" placeholder="Nombre y apellido" />
+    <label class="field-label">Cargo (opcional)</label>
+    <input class="field" id="input-contacto-cargo" placeholder="Ej: Ejecutivo de cuenta" />
+    <div class="field-row">
+      <div>
+        <label class="field-label">Email</label>
+        <input class="field" type="email" id="input-contacto-email" placeholder="nombre@medio.com" />
+      </div>
+      <div>
+        <label class="field-label">Teléfono</label>
+        <input class="field" id="input-contacto-telefono" placeholder="+54 9 11..." />
+      </div>
+    </div>
+    <label class="field-label">Notas (opcional)</label>
+    <textarea class="field" id="input-contacto-notas" rows="2"></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="btn-cancelar-contacto">Cancelar</button>
+      <button class="btn-save" id="btn-guardar-contacto">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="share-modal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">Link de solo lectura</div>
+      <button class="icon-btn" id="btn-cerrar-share">✕</button>
+    </div>
+    <div class="share-modal-note">
+      Cualquiera con este link va a poder ver todos los medios, piezas y ediciones especiales cargados hasta ahora, sin poder editarlos. Es una foto del momento: si después seguís cargando datos, vas a tener que generar un link nuevo para reflejarlos.
+    </div>
+    <div class="share-modal-link-row">
+      <input type="text" id="share-link-input" readonly />
+      <button class="btn-crear" id="btn-copiar-share" style="flex:none;padding:0 14px;background:#00528F;color:#fff;">Copiar</button>
+    </div>
+    <div class="share-modal-note" id="share-modal-warning" style="display:none;color:#993556;">
+      El link es largo porque incluye todos los datos. Algunas apps de mensajería pueden cortarlo — si eso pasa, usá el backup en JSON en su lugar.
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'ua-medios-data';
+const PALETTE = ['#00528F', '#008091', '#00C4DF', '#ff436e', '#002447'];
+const TIPOS = ['Flyer', 'Salida', 'Otro'];
+
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { medios: [] };
+  } catch (e) { return { medios: [] }; }
+}
+function save(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function decodeShareHash() {
+  if (!location.hash.startsWith('#view=')) return null;
+  try {
+    const encoded = location.hash.slice(6);
+    const json = decodeURIComponent(
+      atob(encoded).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+    );
+    const parsed = JSON.parse(json);
+    if (!parsed || !Array.isArray(parsed.medios)) return null;
+    return parsed;
+  } catch (e) {
+    return null;
+  }
+}
+
+const sharedData = decodeShareHash();
+
+function migrarMedios(medios) {
+  medios.forEach(m => {
+    if (!m.ediciones) m.ediciones = [];
+    if (typeof m.archivado !== 'boolean') m.archivado = false;
+    if (!m.contactos) m.contactos = [];
+    if (m.pautaDesde === undefined) m.pautaDesde = null;
+    if (m.pautaHasta === undefined) m.pautaHasta = null;
+  });
+}
+
+let state = sharedData ? sharedData : load();
+// Migración: asegurar que cada medio tenga los campos nuevos
+migrarMedios(state.medios);
+
+let readOnlyMode = !!sharedData;
+let mostrarArchivados = false;
+
+let activeId = state.medios.length ? state.medios[0].id : null;
+let activeTab = 'fijas'; // 'fijas' | 'ediciones'
+let editingPiezaId = null;
+let editingEdicionId = null; // edición dueña de la pieza que se está editando/creando (null = pieza fija)
+let confirmAction = null;
+let mostrarVencidas = false;
+let pendingRestoreData = null; // datos de backup pendientes de confirmar
+
+function activeMedio() {
+  return state.medios.find(m => m.id === activeId);
+}
+
+function previewSize(ancho, alto) {
+  const a = Number(ancho) || 1;
+  const h = Number(alto) || 1;
+  const max = 44;
+  const ratio = a / h;
+  let w, hh;
+  if (ratio >= 1) { w = max; hh = max / ratio; } else { hh = max; w = max * ratio; }
+  return { w: Math.max(w, 8), h: Math.max(hh, 8) };
+}
+
+function render() {
+  renderSidebar();
+  renderMain();
+}
+
+let dragFromIndex = null;
+
+function renderSidebar() {
+  const list = document.getElementById('medio-list');
+  list.innerHTML = '';
+  const medios = state.medios.filter(m => mostrarArchivados || !m.archivado);
+  medios.forEach((m) => {
+    const idx = state.medios.indexOf(m);
+    const div = document.createElement('div');
+    div.className = 'medio-item' + (m.id === activeId ? ' active' : '') + (m.archivado ? ' archivado' : '');
+    div.draggable = !readOnlyMode;
+    div.dataset.index = idx;
+    div.innerHTML = `${readOnlyMode ? '' : '<span class="medio-drag-handle">⠿</span>'}<span class="medio-dot" style="background:${m.color}"></span><span class="medio-name">${escapeHtml(m.nombre)}</span>${m.archivado ? '<span class="medio-archive-badge">ARCH.</span>' : ''}<span class="medio-count">${m.piezas.length}</span>`;
+    div.onclick = () => { activeId = m.id; activeTab = 'fijas'; render(); };
+
+    if (!readOnlyMode) {
+      div.addEventListener('dragstart', (e) => {
+        dragFromIndex = idx;
+        div.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      div.addEventListener('dragend', () => {
+        div.classList.remove('dragging');
+      });
+      div.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        div.classList.add('drag-over');
+      });
+      div.addEventListener('dragleave', () => {
+        div.classList.remove('drag-over');
+      });
+      div.addEventListener('drop', (e) => {
+        e.preventDefault();
+        div.classList.remove('drag-over');
+        const toIndex = idx;
+        if (dragFromIndex === null || dragFromIndex === toIndex) return;
+        const [moved] = state.medios.splice(dragFromIndex, 1);
+        state.medios.splice(toIndex, 0, moved);
+        dragFromIndex = null;
+        save(state);
+        render();
+      });
+    }
+
+    list.appendChild(div);
+  });
+
+  renderStats();
+}
+
+function renderStats() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const totalPiezasFijas = state.medios.reduce((acc, m) => acc + m.piezas.length, 0);
+  const totalEdicionesActivas = state.medios.reduce(
+    (acc, m) => acc + m.ediciones.filter(ed => !ed.vigenciaHasta || ed.vigenciaHasta >= hoy).length, 0
+  );
+  document.getElementById('stat-medios').textContent = state.medios.length;
+  document.getElementById('stat-piezas').textContent = totalPiezasFijas;
+  document.getElementById('stat-ediciones').textContent = totalEdicionesActivas;
+}
+
+function renderMain() {
+  const empty = document.getElementById('empty-state');
+  const view = document.getElementById('medio-view');
+  const m = activeMedio();
+  if (!m) {
+    empty.style.display = 'block';
+    view.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  view.style.display = 'block';
+  document.getElementById('medio-dot').style.background = m.color;
+  document.getElementById('medio-nombre').textContent = m.nombre;
+  document.getElementById('print-medio-nombre').textContent = m.nombre;
+  document.getElementById('medio-badge-archivado').style.display = m.archivado ? 'inline-block' : 'none';
+  document.getElementById('btn-archivar-medio').title = m.archivado ? 'Desarchivar medio' : 'Archivar medio';
+  document.getElementById('btn-archivar-medio').textContent = m.archivado ? '📤' : '📦';
+
+  document.getElementById('count-fijas').textContent = m.piezas.length ? ` (${m.piezas.length})` : '';
+  const totalEdicionPiezas = m.ediciones.reduce((acc, e) => acc + e.piezas.length, 0);
+  document.getElementById('count-ediciones').textContent = m.ediciones.length ? ` (${m.ediciones.length})` : '';
+  document.getElementById('count-contacto').textContent = m.contactos.length ? ` (${m.contactos.length})` : '';
+
+  document.getElementById('tab-btn-fijas').classList.toggle('active', activeTab === 'fijas');
+  document.getElementById('tab-btn-ediciones').classList.toggle('active', activeTab === 'ediciones');
+  document.getElementById('tab-btn-contacto').classList.toggle('active', activeTab === 'contacto');
+  document.getElementById('tab-fijas-content').style.display = activeTab === 'fijas' ? 'block' : 'none';
+  document.getElementById('tab-ediciones-content').style.display = activeTab === 'ediciones' ? 'block' : 'none';
+  document.getElementById('tab-contacto-content').style.display = activeTab === 'contacto' ? 'block' : 'none';
+  document.getElementById('btn-agregar-pieza').style.display = activeTab === 'fijas' ? 'flex' : 'none';
+
+  renderPiezasList(document.getElementById('piezas-container'), m.piezas, m.color, null);
+  renderEdiciones(m);
+  renderContactos(m);
+  renderPauta(m);
+}
+
+function renderPiezasList(container, piezas, color, edicionId) {
+  container.innerHTML = '';
+  if (piezas.length === 0) {
+    container.innerHTML = '<div style="color:#B4B2A9;font-size:13px;padding:' + (edicionId ? '4px 0 6px' : '30px 0') + ';text-align:' + (edicionId ? 'left' : 'center') + ';">' +
+      (edicionId ? 'Todavía no cargaste piezas en esta edición.' : 'Todavía no cargaste flyers ni salidas para este medio.') + '</div>';
+    return;
+  }
+  TIPOS.forEach(tipo => {
+    const piezasTipo = piezas.filter(p => p.tipo === tipo);
+    if (piezasTipo.length === 0) return;
+    const group = document.createElement('div');
+    group.style.marginBottom = '20px';
+    const label = document.createElement('div');
+    label.className = 'grupo-label';
+    label.textContent = tipo.toUpperCase() + 'S';
+    group.appendChild(label);
+
+    piezasTipo.forEach(p => {
+      const size = previewSize(p.ancho, p.alto);
+      const card = document.createElement('div');
+      card.className = 'pieza-card';
+      const medidaTexto = `${p.ancho}x${p.alto} ${p.unidad}`;
+      card.innerHTML = `
+        <div class="preview-wrap"><div class="preview-box" style="width:${size.w}px;height:${size.h}px;background:${color}22;border:1.5px solid ${color};"></div></div>
+        <div class="pieza-info">
+          <div class="pieza-nombre">${escapeHtml(p.nombre) || '(sin nombre)'}</div>
+          <div class="pieza-medidas" data-medida="${medidaTexto}" title="Click para copiar">${p.ancho} x ${p.alto} ${p.unidad}</div>
+          ${p.notas ? `<div class="pieza-notas">${escapeHtml(p.notas)}</div>` : ''}
+          ${p.actualizadoEn ? `<div class="pieza-actualizado">${tiempoRelativo(p.actualizadoEn)}</div>` : ''}
+        </div>
+        <div class="pieza-actions no-print no-edit">
+          <button class="icon-btn btn-edit-pieza" data-id="${p.id}" data-edicion="${edicionId || ''}">✎</button>
+          <button class="icon-btn btn-del-pieza" data-id="${p.id}" data-edicion="${edicionId || ''}">🗑</button>
+        </div>
+      `;
+      group.appendChild(card);
+    });
+    container.appendChild(group);
+  });
+
+  container.querySelectorAll('.btn-edit-pieza').forEach(btn => {
+    btn.onclick = () => openPiezaModal(btn.dataset.id, btn.dataset.edicion || null);
+  });
+  container.querySelectorAll('.btn-del-pieza').forEach(btn => {
+    btn.onclick = () => openConfirm(btn.dataset.edicion ? 'pieza-edicion' : 'pieza', btn.dataset.id, '¿Eliminar esta pieza?', btn.dataset.edicion || null);
+  });
+  container.querySelectorAll('.pieza-medidas').forEach(el => {
+    el.onclick = () => copiarMedida(el);
+  });
+}
+
+function copiarMedida(el) {
+  const texto = el.dataset.medida;
+  const original = el.textContent;
+  const marcarCopiado = () => {
+    el.textContent = 'Copiado ✓';
+    setTimeout(() => { el.textContent = original; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(marcarCopiado).catch(() => {});
+  } else {
+    const tmp = document.createElement('textarea');
+    tmp.value = texto;
+    document.body.appendChild(tmp);
+    tmp.select();
+    document.execCommand('copy');
+    document.body.removeChild(tmp);
+    marcarCopiado();
+  }
+}
+
+function tiempoRelativo(iso) {
+  const fecha = new Date(iso);
+  const ahora = new Date();
+  const diffMs = ahora - fecha;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Actualizado recién';
+  if (diffMin < 60) return `Actualizado hace ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `Actualizado hace ${diffH} h`;
+  const diffD = Math.floor(diffH / 24);
+  if (diffD < 30) return `Actualizado hace ${diffD} día${diffD === 1 ? '' : 's'}`;
+  const diffM = Math.floor(diffD / 30);
+  if (diffM < 12) return `Actualizado hace ${diffM} mes${diffM === 1 ? '' : 'es'}`;
+  const diffY = Math.floor(diffM / 12);
+  return `Actualizado hace ${diffY} año${diffY === 1 ? '' : 's'}`;
+}
+
+function fmtFecha(iso) {
+  if (!iso) return '';
+  const [y, mo, d] = iso.split('-');
+  return `${d}/${mo}/${y}`;
+}
+
+const DIAS_ALERTA_POR_VENCER = 7;
+
+function diasRestantes(iso) {
+  const hoy = new Date();
+  const hoyUTC = Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const [y, mo, d] = iso.split('-').map(Number);
+  const fechaUTC = Date.UTC(y, mo - 1, d);
+  return Math.round((fechaUTC - hoyUTC) / 86400000);
+}
+
+function renderEdiciones(m) {
+  const container = document.getElementById('ediciones-container');
+  container.innerHTML = '';
+  const hoy = new Date().toISOString().slice(0, 10);
+  const ediciones = m.ediciones.filter(ed => mostrarVencidas || !ed.vigenciaHasta || ed.vigenciaHasta >= hoy);
+  if (m.ediciones.length === 0) {
+    container.innerHTML = '<div class="empty-ediciones">Todavía no creaste ninguna edición especial (ej: Mundial 2026, Verano, Día del Padre).</div>';
+    return;
+  }
+  if (ediciones.length === 0) {
+    container.innerHTML = '<div class="empty-ediciones">Todas las ediciones especiales están vencidas. Activá "Mostrar vencidas" para verlas.</div>';
+    return;
+  }
+  ediciones.forEach(ed => {
+    const vencida = ed.vigenciaHasta && ed.vigenciaHasta < hoy;
+    let dias = null;
+    let porVencer = false;
+    if (ed.vigenciaHasta && !vencida) {
+      dias = diasRestantes(ed.vigenciaHasta);
+      porVencer = dias <= DIAS_ALERTA_POR_VENCER;
+    }
+    let badgeClass = '';
+    let badgeTexto = 'EDICIÓN ESPECIAL';
+    if (vencida) { badgeClass = ' vencida'; badgeTexto = 'VENCIDA'; }
+    else if (porVencer) {
+      badgeClass = ' por-vencer';
+      badgeTexto = dias === 0 ? 'VENCE HOY' : dias === 1 ? 'VENCE MAÑANA' : `VENCE EN ${dias} DÍAS`;
+    }
+    const block = document.createElement('div');
+    block.className = 'edicion-block' + (vencida ? ' vencida' : '');
+    block.innerHTML = `
+      <div class="edicion-header">
+        <div class="edicion-title-wrap">
+          <span class="edicion-title">${escapeHtml(ed.nombre)}</span>
+          <span class="edicion-badge${badgeClass}">${badgeTexto}</span>
+          ${ed.vigenciaHasta ? `<span class="edicion-fecha">${vencida ? 'venció el' : 'vigente hasta'} ${fmtFecha(ed.vigenciaHasta)}</span>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;" class="no-print no-edit">
+          <button class="btn-add-pieza-edicion" data-edicion="${ed.id}">+ Pieza</button>
+          <button class="icon-btn btn-edit-fecha-edicion" data-edicion="${ed.id}" title="Editar vigencia">📅</button>
+          <button class="icon-btn btn-del-edicion" data-edicion="${ed.id}">🗑</button>
+        </div>
+      </div>
+      <div class="edicion-piezas" data-edicion="${ed.id}"></div>
+    `;
+    container.appendChild(block);
+    renderPiezasList(block.querySelector('.edicion-piezas'), ed.piezas, m.color, ed.id);
+  });
+
+  container.querySelectorAll('.btn-add-pieza-edicion').forEach(btn => {
+    btn.onclick = () => openPiezaModal(null, btn.dataset.edicion);
+  });
+  container.querySelectorAll('.btn-del-edicion').forEach(btn => {
+    btn.onclick = () => openConfirm('edicion', btn.dataset.edicion, '¿Eliminar esta edición especial y todas sus piezas?');
+  });
+  container.querySelectorAll('.btn-edit-fecha-edicion').forEach(btn => {
+    btn.onclick = () => editarVigenciaEdicion(btn.dataset.edicion);
+  });
+}
+
+function editarVigenciaEdicion(edicionId) {
+  if (readOnlyMode) return;
+  const m = activeMedio();
+  const ed = m.ediciones.find(e => e.id === edicionId);
+  if (!ed) return;
+  const actual = ed.vigenciaHasta || '';
+  const nueva = window.prompt('Vigente hasta (formato AAAA-MM-DD). Dejar vacío para quitar la fecha:', actual);
+  if (nueva === null) return;
+  const limpio = nueva.trim();
+  if (limpio && !/^\d{4}-\d{2}-\d{2}$/.test(limpio)) {
+    window.alert('Formato inválido. Usá AAAA-MM-DD, por ejemplo 2026-12-31.');
+    return;
+  }
+  ed.vigenciaHasta = limpio || null;
+  save(state);
+  render();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+function renderPauta(m) {
+  const banner = document.getElementById('pauta-banner');
+  const texto = document.getElementById('pauta-fechas-texto');
+  const estado = document.getElementById('pauta-estado');
+  banner.classList.remove('vencida', 'por-vencer');
+  estado.style.display = 'none';
+
+  if (!m.pautaDesde && !m.pautaHasta) {
+    texto.className = 'pauta-fechas sin-fecha';
+    texto.textContent = 'Sin fecha de pauta configurada';
+    return;
+  }
+  texto.className = 'pauta-fechas';
+  const desdeTxt = m.pautaDesde ? fmtFecha(m.pautaDesde) : '?';
+  const hastaTxt = m.pautaHasta ? fmtFecha(m.pautaHasta) : '?';
+  texto.textContent = `${desdeTxt}  →  ${hastaTxt}`;
+
+  if (m.pautaHasta) {
+    const hoy = new Date().toISOString().slice(0, 10);
+    const vencida = m.pautaHasta < hoy;
+    if (vencida) {
+      banner.classList.add('vencida');
+      estado.className = 'pauta-estado vencida';
+      estado.textContent = 'PAUTA VENCIDA';
+      estado.style.display = 'inline-block';
+    } else {
+      const dias = diasRestantes(m.pautaHasta);
+      if (dias <= DIAS_ALERTA_POR_VENCER) {
+        banner.classList.add('por-vencer');
+        estado.className = 'pauta-estado por-vencer';
+        estado.textContent = dias === 0 ? 'VENCE HOY' : dias === 1 ? 'VENCE MAÑANA' : `VENCE EN ${dias} DÍAS`;
+        estado.style.display = 'inline-block';
+      } else {
+        estado.className = 'pauta-estado';
+        estado.textContent = 'VIGENTE';
+        estado.style.display = 'inline-block';
+      }
+    }
+  }
+}
+
+function iniciales(nombre) {
+  const partes = nombre.trim().split(/\s+/);
+  const a = partes[0] ? partes[0][0] : '';
+  const b = partes.length > 1 ? partes[partes.length - 1][0] : '';
+  return (a + b).toUpperCase();
+}
+
+function renderContactos(m) {
+  const container = document.getElementById('contactos-container');
+  container.innerHTML = '';
+  if (m.contactos.length === 0) {
+    container.innerHTML = '<div class="empty-ediciones">Todavía no cargaste contactos para este medio.</div>';
+    return;
+  }
+  m.contactos.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'contacto-card';
+    const datos = [];
+    if (c.email) datos.push(`<a href="mailto:${escapeHtml(c.email)}">✉ ${escapeHtml(c.email)}</a>`);
+    if (c.telefono) datos.push(`<a href="tel:${escapeHtml(c.telefono)}">☎ ${escapeHtml(c.telefono)}</a>`);
+    card.innerHTML = `
+      <div class="contacto-avatar">${escapeHtml(iniciales(c.nombre || '?'))}</div>
+      <div class="contacto-info">
+        <div class="contacto-nombre">${escapeHtml(c.nombre) || '(sin nombre)'}</div>
+        ${c.cargo ? `<div class="contacto-cargo">${escapeHtml(c.cargo)}</div>` : ''}
+        ${datos.length ? `<div class="contacto-datos">${datos.join('')}</div>` : ''}
+        ${c.notas ? `<div class="contacto-notas">${escapeHtml(c.notas)}</div>` : ''}
+      </div>
+      <div class="pieza-actions no-print no-edit">
+        <button class="icon-btn btn-edit-contacto" data-id="${c.id}">✎</button>
+        <button class="icon-btn btn-del-contacto" data-id="${c.id}">🗑</button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+  container.querySelectorAll('.btn-edit-contacto').forEach(btn => {
+    btn.onclick = () => openContactoModal(btn.dataset.id);
+  });
+  container.querySelectorAll('.btn-del-contacto').forEach(btn => {
+    btn.onclick = () => openConfirm('contacto', btn.dataset.id, '¿Eliminar este contacto?');
+  });
+}
+
+// --- Nuevo medio ---
+document.getElementById('btn-mostrar-nuevo-medio').onclick = () => {
+  document.getElementById('btn-mostrar-nuevo-medio').style.display = 'none';
+  document.getElementById('form-nuevo-medio').style.display = 'block';
+  document.getElementById('input-nuevo-medio').focus();
+};
+document.getElementById('btn-cancelar-medio').onclick = cerrarFormNuevoMedio;
+function cerrarFormNuevoMedio() {
+  document.getElementById('btn-mostrar-nuevo-medio').style.display = 'flex';
+  document.getElementById('form-nuevo-medio').style.display = 'none';
+  document.getElementById('input-nuevo-medio').value = '';
+}
+document.getElementById('input-nuevo-medio').addEventListener('keydown', e => {
+  if (e.key === 'Enter') crearMedio();
+});
+document.getElementById('btn-crear-medio').onclick = crearMedio;
+function crearMedio() {
+  if (readOnlyMode) return;
+  const nombre = document.getElementById('input-nuevo-medio').value.trim();
+  if (!nombre) return;
+  const nuevo = { id: uid(), nombre, color: PALETTE[state.medios.length % PALETTE.length], piezas: [], ediciones: [], archivado: false, contactos: [], pautaDesde: null, pautaHasta: null };
+  state.medios.push(nuevo);
+  save(state);
+  activeId = nuevo.id;
+  cerrarFormNuevoMedio();
+  render();
+}
+
+// --- Tabs ---
+document.getElementById('tab-btn-fijas').onclick = () => { activeTab = 'fijas'; render(); };
+document.getElementById('tab-btn-ediciones').onclick = () => { activeTab = 'ediciones'; render(); };
+document.getElementById('tab-btn-contacto').onclick = () => { activeTab = 'contacto'; render(); };
+
+// --- Nueva edición especial ---
+document.getElementById('btn-nueva-edicion').onclick = () => {
+  document.getElementById('btn-nueva-edicion').style.display = 'none';
+  document.getElementById('form-nueva-edicion').style.display = 'flex';
+  document.getElementById('input-nueva-edicion').focus();
+};
+document.getElementById('btn-cancelar-edicion').onclick = cerrarFormNuevaEdicion;
+function cerrarFormNuevaEdicion() {
+  document.getElementById('btn-nueva-edicion').style.display = 'flex';
+  document.getElementById('form-nueva-edicion').style.display = 'none';
+  document.getElementById('input-nueva-edicion').value = '';
+}
+document.getElementById('input-nueva-edicion').addEventListener('keydown', e => {
+  if (e.key === 'Enter') crearEdicion();
+});
+document.getElementById('btn-crear-edicion').onclick = crearEdicion;
+function crearEdicion() {
+  if (readOnlyMode) return;
+  const nombre = document.getElementById('input-nueva-edicion').value.trim();
+  if (!nombre) return;
+  const fecha = document.getElementById('input-fecha-edicion').value || null;
+  const m = activeMedio();
+  m.ediciones.push({ id: uid(), nombre, vigenciaHasta: fecha, piezas: [] });
+  save(state);
+  document.getElementById('input-fecha-edicion').value = '';
+  cerrarFormNuevaEdicion();
+  render();
+}
+
+document.getElementById('chk-mostrar-vencidas').onchange = (e) => {
+  mostrarVencidas = e.target.checked;
+  render();
+};
+
+// --- Archivar medio ---
+document.getElementById('btn-archivar-medio').onclick = () => {
+  if (readOnlyMode) return;
+  const m = activeMedio();
+  if (!m) return;
+  m.archivado = !m.archivado;
+  save(state);
+  render();
+};
+
+document.getElementById('chk-mostrar-archivados').onchange = (e) => {
+  mostrarArchivados = e.target.checked;
+  render();
+};
+
+// --- Pauta (fechas de vigencia comercial) ---
+document.getElementById('btn-editar-pauta').onclick = () => {
+  if (readOnlyMode) return;
+  const m = activeMedio();
+  if (!m) return;
+  document.getElementById('input-pauta-desde').value = m.pautaDesde || '';
+  document.getElementById('input-pauta-hasta').value = m.pautaHasta || '';
+  document.getElementById('overlay-pauta').classList.add('show');
+};
+document.getElementById('btn-cerrar-pauta').onclick = closePautaModal;
+document.getElementById('btn-cancelar-pauta').onclick = closePautaModal;
+function closePautaModal() {
+  document.getElementById('overlay-pauta').classList.remove('show');
+}
+document.getElementById('btn-guardar-pauta').onclick = () => {
+  if (readOnlyMode) return;
+  const m = activeMedio();
+  if (!m) return;
+  m.pautaDesde = document.getElementById('input-pauta-desde').value || null;
+  m.pautaHasta = document.getElementById('input-pauta-hasta').value || null;
+  save(state);
+  closePautaModal();
+  render();
+};
+document.getElementById('overlay-pauta').addEventListener('click', e => {
+  if (e.target.id === 'overlay-pauta') closePautaModal();
+});
+
+// --- Contactos ---
+let editingContactoId = null;
+document.getElementById('btn-agregar-contacto').onclick = () => openContactoModal(null);
+document.getElementById('btn-cerrar-contacto').onclick = closeContactoModal;
+document.getElementById('btn-cancelar-contacto').onclick = closeContactoModal;
+function openContactoModal(id) {
+  const m = activeMedio();
+  if (!m) return;
+  editingContactoId = id;
+  const c = id ? m.contactos.find(c => c.id === id) : { nombre: '', cargo: '', email: '', telefono: '', notas: '' };
+  document.getElementById('modal-contacto-title').textContent = id ? 'Editar contacto' : 'Nuevo contacto';
+  document.getElementById('input-contacto-nombre').value = c.nombre;
+  document.getElementById('input-contacto-cargo').value = c.cargo || '';
+  document.getElementById('input-contacto-email').value = c.email || '';
+  document.getElementById('input-contacto-telefono').value = c.telefono || '';
+  document.getElementById('input-contacto-notas').value = c.notas || '';
+  document.getElementById('overlay-contacto').classList.add('show');
+  document.getElementById('input-contacto-nombre').focus();
+}
+function closeContactoModal() {
+  document.getElementById('overlay-contacto').classList.remove('show');
+  editingContactoId = null;
+}
+document.getElementById('btn-guardar-contacto').onclick = () => {
+  if (readOnlyMode) return;
+  const nombre = document.getElementById('input-contacto-nombre').value.trim();
+  if (!nombre) return;
+  const m = activeMedio();
+  if (!m) return;
+  const data = {
+    nombre,
+    cargo: document.getElementById('input-contacto-cargo').value.trim(),
+    email: document.getElementById('input-contacto-email').value.trim(),
+    telefono: document.getElementById('input-contacto-telefono').value.trim(),
+    notas: document.getElementById('input-contacto-notas').value.trim(),
+  };
+  if (editingContactoId) {
+    const c = m.contactos.find(c => c.id === editingContactoId);
+    Object.assign(c, data);
+  } else {
+    m.contactos.push({ id: uid(), ...data });
+  }
+  save(state);
+  closeContactoModal();
+  render();
+};
+document.getElementById('overlay-contacto').addEventListener('click', e => {
+  if (e.target.id === 'overlay-contacto') closeContactoModal();
+});
+
+// --- Eliminar medio ---
+document.getElementById('btn-eliminar-medio').onclick = () => {
+  if (readOnlyMode) return;
+  const m = activeMedio();
+  if (m) openConfirm('medio', m.id, '¿Eliminar este medio y todas sus piezas?');
+};
+
+// --- Confirmación genérica ---
+function openConfirm(type, id, text, edicionId) {
+  confirmAction = { type, id, edicionId: edicionId || null };
+  document.getElementById('confirm-text').textContent = text;
+  document.getElementById('confirm-modal').classList.add('show');
+}
+document.getElementById('btn-cancelar-confirm').onclick = () => {
+  confirmAction = null;
+  document.getElementById('confirm-modal').classList.remove('show');
+};
+document.getElementById('btn-confirmar-eliminar').onclick = () => {
+  if (readOnlyMode) return;
+  if (!confirmAction) return;
+  const m = activeMedio();
+  if (confirmAction.type === 'medio') {
+    state.medios = state.medios.filter(x => x.id !== confirmAction.id);
+    save(state);
+    if (activeId === confirmAction.id) {
+      activeId = state.medios.length ? state.medios[0].id : null;
+    }
+  } else if (confirmAction.type === 'pieza') {
+    m.piezas = m.piezas.filter(p => p.id !== confirmAction.id);
+    save(state);
+  } else if (confirmAction.type === 'pieza-edicion') {
+    const ed = m.ediciones.find(e => e.id === confirmAction.edicionId);
+    if (ed) ed.piezas = ed.piezas.filter(p => p.id !== confirmAction.id);
+    save(state);
+  } else if (confirmAction.type === 'edicion') {
+    m.ediciones = m.ediciones.filter(e => e.id !== confirmAction.id);
+    save(state);
+  } else if (confirmAction.type === 'contacto') {
+    m.contactos = m.contactos.filter(c => c.id !== confirmAction.id);
+    save(state);
+  } else if (confirmAction.type === 'restaurar') {
+    state = pendingRestoreData;
+    migrarMedios(state.medios);
+    pendingRestoreData = null;
+    save(state);
+    activeId = state.medios.length ? state.medios[0].id : null;
+    activeTab = 'fijas';
+  }
+  confirmAction = null;
+  document.getElementById('confirm-modal').classList.remove('show');
+  render();
+};
+
+// --- Modal pieza ---
+document.getElementById('btn-agregar-pieza').onclick = () => openPiezaModal(null, null);
+document.getElementById('btn-cerrar-modal').onclick = closePiezaModal;
+document.getElementById('btn-cancelar-pieza').onclick = closePiezaModal;
+
+function piezasArrayFor(m, edicionId) {
+  if (!edicionId) return m.piezas;
+  const ed = m.ediciones.find(e => e.id === edicionId);
+  return ed ? ed.piezas : null;
+}
+
+function openPiezaModal(id, edicionId) {
+  const m = activeMedio();
+  if (!m) return;
+  editingPiezaId = id;
+  editingEdicionId = edicionId || null;
+  const piezas = piezasArrayFor(m, editingEdicionId);
+  if (!piezas) return;
+  const pieza = id ? piezas.find(p => p.id === id) : { tipo: 'Flyer', nombre: '', ancho: '', alto: '', unidad: 'px', notas: '' };
+  document.getElementById('modal-pieza-title').textContent = (id ? 'Editar pieza' : 'Nueva pieza') + (editingEdicionId ? ' · edición especial' : '');
+  document.getElementById('input-tipo').value = pieza.tipo;
+  document.getElementById('input-nombre').value = pieza.nombre;
+  document.getElementById('input-ancho').value = pieza.ancho;
+  document.getElementById('input-alto').value = pieza.alto;
+  document.getElementById('input-unidad').value = pieza.unidad;
+  document.getElementById('input-notas').value = pieza.notas || '';
+  document.getElementById('overlay-pieza').classList.add('show');
+  document.getElementById('input-nombre').focus();
+}
+function closePiezaModal() {
+  document.getElementById('overlay-pieza').classList.remove('show');
+  editingPiezaId = null;
+  editingEdicionId = null;
+}
+document.getElementById('btn-guardar-pieza').onclick = () => {
+  if (readOnlyMode) return;
+  const nombre = document.getElementById('input-nombre').value.trim();
+  if (!nombre) return;
+  const m = activeMedio();
+  const piezas = piezasArrayFor(m, editingEdicionId);
+  if (!piezas) return;
+  const data = {
+    tipo: document.getElementById('input-tipo').value,
+    nombre,
+    ancho: Number(document.getElementById('input-ancho').value) || 0,
+    alto: Number(document.getElementById('input-alto').value) || 0,
+    unidad: document.getElementById('input-unidad').value,
+    notas: document.getElementById('input-notas').value.trim(),
+    actualizadoEn: new Date().toISOString(),
+  };
+  if (editingPiezaId) {
+    const p = piezas.find(p => p.id === editingPiezaId);
+    Object.assign(p, data);
+  } else {
+    piezas.push({ id: uid(), ...data });
+  }
+  save(state);
+  closePiezaModal();
+  render();
+};
+
+// Cerrar modales clickeando afuera
+document.getElementById('overlay-pieza').addEventListener('click', e => {
+  if (e.target.id === 'overlay-pieza') closePiezaModal();
+});
+document.getElementById('confirm-modal').addEventListener('click', e => {
+  if (e.target.id === 'confirm-modal') {
+    confirmAction = null;
+    document.getElementById('confirm-modal').classList.remove('show');
+  }
+});
+
+// --- Imprimir / PDF ---
+document.getElementById('btn-imprimir').onclick = () => window.print();
+
+// --- Desplegable de resumen ---
+const STATS_PREF_KEY = 'ua-medios-stats-open';
+const statsBar = document.getElementById('stats-bar');
+const statsChevron = document.getElementById('stats-chevron');
+let statsOpen = localStorage.getItem(STATS_PREF_KEY) === '1';
+applyStatsOpen();
+function applyStatsOpen() {
+  statsBar.classList.toggle('open', statsOpen);
+  statsChevron.classList.toggle('open', statsOpen);
+}
+document.getElementById('stats-toggle').onclick = () => {
+  statsOpen = !statsOpen;
+  localStorage.setItem(STATS_PREF_KEY, statsOpen ? '1' : '0');
+  applyStatsOpen();
+};
+
+// --- Backup: exportar ---
+document.getElementById('btn-export').onclick = () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fecha = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `ua-medios-backup-${fecha}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+// --- Backup: restaurar ---
+document.getElementById('btn-import').onclick = () => {
+  document.getElementById('input-import-file').click();
+};
+document.getElementById('input-import-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      if (!parsed || !Array.isArray(parsed.medios)) {
+        window.alert('El archivo no tiene el formato esperado (falta el listado de medios).');
+        return;
+      }
+      pendingRestoreData = parsed;
+      confirmAction = { type: 'restaurar' };
+      document.getElementById('confirm-text').textContent =
+        `Esto va a reemplazar todos los datos actuales por los del archivo "${file.name}" (${parsed.medios.length} medio/s). No se puede deshacer. ¿Continuar?`;
+      document.getElementById('confirm-modal').classList.add('show');
+    } catch (err) {
+      window.alert('No se pudo leer el archivo. Verificá que sea un backup JSON exportado desde esta misma herramienta.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// --- Buscador global ---
+const searchInput = document.getElementById('search-input');
+const searchResults = document.getElementById('search-results');
+
+function buscar(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const resultados = [];
+  state.medios.forEach(m => {
+    if (m.nombre.toLowerCase().includes(q)) {
+      resultados.push({ tipo: 'medio', medioId: m.id, titulo: m.nombre, sub: 'Medio' });
+    }
+    m.piezas.forEach(p => {
+      const medidas = `${p.ancho}x${p.alto} ${p.unidad}`;
+      if (p.nombre.toLowerCase().includes(q) || medidas.toLowerCase().includes(q) || (p.notas || '').toLowerCase().includes(q)) {
+        resultados.push({ tipo: 'pieza', medioId: m.id, edicionId: null, piezaId: p.id, titulo: p.nombre || '(sin nombre)', sub: `${m.nombre} · ${medidas} · pieza fija` });
+      }
+    });
+    m.ediciones.forEach(ed => {
+      if (ed.nombre.toLowerCase().includes(q)) {
+        resultados.push({ tipo: 'edicion', medioId: m.id, edicionId: ed.id, titulo: ed.nombre, sub: `${m.nombre} · edición especial` });
+      }
+      ed.piezas.forEach(p => {
+        const medidas = `${p.ancho}x${p.alto} ${p.unidad}`;
+        if (p.nombre.toLowerCase().includes(q) || medidas.toLowerCase().includes(q) || (p.notas || '').toLowerCase().includes(q)) {
+          resultados.push({ tipo: 'pieza', medioId: m.id, edicionId: ed.id, piezaId: p.id, titulo: p.nombre || '(sin nombre)', sub: `${m.nombre} · ${medidas} · ${ed.nombre}` });
+        }
+      });
+    });
+  });
+  return resultados.slice(0, 20);
+}
+
+function renderSearchResults(resultados, query) {
+  searchResults.innerHTML = '';
+  if (!query.trim()) {
+    searchResults.classList.remove('show');
+    return;
+  }
+  if (resultados.length === 0) {
+    searchResults.innerHTML = '<div class="search-no-results">Sin resultados.</div>';
+    searchResults.classList.add('show');
+    return;
+  }
+  resultados.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'search-result-item';
+    item.innerHTML = `<div class="search-result-title">${escapeHtml(r.titulo)}</div><div class="search-result-sub">${escapeHtml(r.sub)}</div>`;
+    item.onclick = () => irAResultado(r);
+    searchResults.appendChild(item);
+  });
+  searchResults.classList.add('show');
+}
+
+function irAResultado(r) {
+  activeId = r.medioId;
+  activeTab = r.edicionId ? 'ediciones' : 'fijas';
+  render();
+  searchResults.classList.remove('show');
+  searchInput.value = '';
+  if (r.piezaId) {
+    setTimeout(() => {
+      const el = document.querySelector(`[data-id="${r.piezaId}"]`);
+      const card = el ? el.closest('.pieza-card') : null;
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('highlight-flash');
+        setTimeout(() => card.classList.remove('highlight-flash'), 1600);
+      }
+    }, 50);
+  } else if (r.edicionId) {
+    setTimeout(() => {
+      const btn = document.querySelector(`.btn-del-edicion[data-edicion="${r.edicionId}"]`);
+      const block = btn ? btn.closest('.edicion-block') : null;
+      if (block) {
+        block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        block.classList.add('highlight-flash');
+        setTimeout(() => block.classList.remove('highlight-flash'), 1600);
+      }
+    }, 50);
+  }
+}
+
+searchInput.addEventListener('input', () => {
+  renderSearchResults(buscar(searchInput.value), searchInput.value);
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#search-box')) searchResults.classList.remove('show');
+});
+
+// --- Compartir: generar link de solo lectura ---
+document.getElementById('btn-share-link').onclick = () => {
+  const payload = { medios: state.medios, generadoEn: new Date().toISOString() };
+  const json = JSON.stringify(payload);
+  const encoded = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode(parseInt(p1, 16))));
+  const url = location.origin + location.pathname + '#view=' + encoded;
+  const input = document.getElementById('share-link-input');
+  input.value = url;
+  document.getElementById('share-modal-warning').style.display = url.length > 6000 ? 'block' : 'none';
+  document.getElementById('share-modal').classList.add('show');
+};
+document.getElementById('btn-cerrar-share').onclick = () => {
+  document.getElementById('share-modal').classList.remove('show');
+};
+document.getElementById('share-modal').addEventListener('click', e => {
+  if (e.target.id === 'share-modal') document.getElementById('share-modal').classList.remove('show');
+});
+document.getElementById('btn-copiar-share').onclick = () => {
+  const input = document.getElementById('share-link-input');
+  input.select();
+  const btn = document.getElementById('btn-copiar-share');
+  const original = btn.textContent;
+  const marcar = () => { btn.textContent = 'Copiado ✓'; setTimeout(() => { btn.textContent = original; }, 1200); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(input.value).then(marcar).catch(() => {});
+  } else {
+    document.execCommand('copy');
+    marcar();
+  }
+};
+
+// --- Modo solo lectura ---
+if (readOnlyMode) {
+  document.body.classList.add('read-only');
+  const banner = document.getElementById('readonly-banner');
+  banner.style.display = 'flex';
+  const fecha = sharedData.generadoEn ? fmtFecha(sharedData.generadoEn.slice(0, 10)) : '';
+  document.getElementById('readonly-banner-text').textContent =
+    `Vista de solo lectura${fecha ? ' · generada el ' + fecha : ''}. No podés editar estos datos.`;
+  document.getElementById('btn-salir-readonly').onclick = () => {
+    location.href = location.pathname;
+  };
+}
+
+render();
+</script>
+</body>
+</html>
